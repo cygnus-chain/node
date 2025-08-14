@@ -52,7 +52,7 @@ geth --datadir ~/cygnus_data \
     --http --http.addr 0.0.0.0 --http.port 6228 --http.api personal,eth,net,web3,miner \
     --ws --ws.addr 0.0.0.0 --ws.port 8291 --ws.api personal,eth,net,web3,miner \
     --allow-insecure-unlock \
-    --unlock <YOUR_ACCOUNT_ADDRESS> --password ~/cygnus_data/password.txt \
+    --unlock "Your_eth_account_wallet_address" --password ~/cygnus_data/password.txt \
     --mine --miner.threads 1 \
     --verbosity 4 \
     --nodiscover=false
