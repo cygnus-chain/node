@@ -1,212 +1,100 @@
-# Cygnus Node Installer
+# Cygnus Node Installation Guide
 
-Welcome to the **Cygnus Node** repository! This project provides an automated setup for running a full Cygnus blockchain node, including automatic peer connection, mining, and firewall configuration. The goal is to make launching and managing your Cygnus node fast, safe, and fully automated.
-
-Repository: [https://github.com/cygnus-chain/node](https://github.com/cygnus-chain/node)
-
----
-
-## Table of Contents
-
-* [Overview](#overview)
-* [Features](#features)
-* [Prerequisites](#prerequisites)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Scripts](#scripts)
-* [Node Syncing & Peering](#node-syncing--peering)
-* [Firewall & Networking](#firewall--networking)
-* [Troubleshooting](#troubleshooting)
-* [Contributing](#contributing)
-* [License](#license)
-* [Support](#support)
-
----
-
-## Overview
-
-Cygnus Node is designed for blockchain enthusiasts, developers, and validators who want to easily run a full Cygnus blockchain node. It handles:
-
-* Node initialization from a genesis file
-* Running Geth in the background
-* Automatic peer connection to main or custom nodes
-* Mining configuration
-* UFW firewall configuration for ports
-* Automatic sync check for blocks
-
----
-
-## Features
-
-* Fully automated **node setup and configuration**
-* Minimal user input: only account address, password file, and peer choice
-* Background execution using `screen`
-* Real-time **peer connection verification**
-* Automatic **block sync check** (waits for block height > 6000)
-* Built-in **firewall configuration** for secure networking
-
----
+This repository contains the necessary files to install and run a Cygnus blockchain node. The node includes `boot.key`, `genesis.json`, and scripts for installation and setup.
 
 ## Prerequisites
 
-Before running the node, ensure you have:
-
-* Ubuntu / Debian 64-bit server
-* `screen` installed (`sudo apt install screen`)
-* UFW enabled (`sudo ufw enable`)
-
-
----
+* Linux-based OS (Ubuntu/Debian recommended)
+* `curl`, `wget`, `tar` installed
+* At least 2GB RAM
+* 20GB free disk space
+* Open ports: 30303 (P2P), 6228 (HTTP), 8291 (WebSocket)
 
 ## Installation
 
-Clone the repository:
+Clone the repository and run the installer:
 
 ```bash
 git clone https://github.com/cygnus-chain/node.git
 cd node
-chmod +x installer.sh node.sh
+chmod +x install.sh
+./install.sh
 ```
 
-The repository contains:
+The `install.sh` script will:
 
-* `installer.sh` → Installs Geth, Go, and sets up environment
-* `node.sh` → Wizard for creating and running a Cygnus node
+* Install Geth v1.10.23
+* Install Go if not present
+* Set up the `~/cygnus_data` directory
+* Place the `genesis.json` and `boot.key`
+* Create a default Ethereum account and save the password in `~/cygnus_data/password.txt`
 
----
+## Initialize the Blockchain
 
-## Usage
-
-Run the node setup wizard:
+After installation, initialize your node with the provided genesis block:
 
 ```bash
-./node.sh
+geth --datadir ~/cygnus_data init ~/node/genesis.json
 ```
 
-You will be prompted to enter:
+This will prepare the local data directory for blockchain synchronization.
 
-1. **Node account address** (e.g., `0x4608dfe66f785df639efbf60f487ace4cdc163d3`)
-2. **Path to password file** (e.g., `~/cygnus_data/password.txt`)
-3. **Peer choice** – either default/main node or a custom enode URL
+## Running the Node
 
-The script will:
-
-* Create the `cygnus_data` directory
-* Initialize the genesis block
-* Start the node in a `screen` session
-* Add the peer node automatically
-* Wait until the blockchain syncs past block 6000
-* Configure UFW firewall for necessary ports
-
-To attach to the node logs:
+Start the node with mining enabled and connect to the bootnode:
 
 ```bash
-screen -r cygnus_node
+geth --datadir ~/cygnus_data \
+    --networkid 235 \
+    --bootnodes "enode://3c7692ad6c045ee7ff574f8321b9ea8689783756f4f5007c9ad8e7cc24a9670ac742abcc9060aa0b1e3ab38355b19063f0141ce1c7bb8e2a942c7168e18101f4@88.99.217.236:30303" \
+    --port 30303 \
+    --nat any \
+    --http --http.addr 0.0.0.0 --http.port 6228 --http.api personal,eth,net,web3,miner \
+    --ws --ws.addr 0.0.0.0 --ws.port 8291 --ws.api personal,eth,net,web3,miner \
+    --allow-insecure-unlock \
+    --unlock <YOUR_ACCOUNT_ADDRESS> --password ~/cygnus_data/password.txt \
+    --mine --miner.threads 1 \
+    --verbosity 4 \
+    --nodiscover=false
 ```
 
-To interact with the node via Geth console:
+Replace `<YOUR_ACCOUNT_ADDRESS>` with the Ethereum account created during installation.
 
-```bash
-geth attach ~/cygnus_data/geth.ipc
+## Adding Trusted Peers
+
+If needed, you can manually add the trusted bootnode to ensure connectivity:
+
+```javascript
+> admin.addPeer("enode://3c7692ad6c045ee7ff574f8321b9ea8689783756f4f5007c9ad8e7cc24a9670ac742abcc9060aa0b1e3ab38355b19063f0141ce1c7bb8e2a942c7168e18101f4@88.99.217.236:30303")
+true
 ```
 
----
-
-## Scripts
-
-### installer.sh
-
-Installs all dependencies required for the Cygnus node:
-
-* Geth (Ethereum client)
-* Go language runtime
-* Required libraries and utilities
-
-### node.sh
-
-The main wizard for:
-
-* Node initialization
-* Background node execution
-* Peer addition and verification
-* Blockchain sync check
-* Automatic firewall configuration
-
----
-
-## Node Syncing & Peering
-
-After running `node.sh`:
-
-* The node automatically connects to a main/default peer or custom enode URL
-* Peer connections can be verified:
+Check the connected peers:
 
 ```javascript
 > admin.peers
 ```
 
-* Node will automatically wait until blockchain reaches **block number 6000+** to ensure sync is working
-* Mining is automatically started with one thread
+You should see the bootnode listed in the output.
 
----
+## Verifying Node Status
 
-## Firewall & Networking
+Check current block number:
 
-The following ports are automatically opened:
-
-| Protocol | Port  | Description             |
-| -------- | ----- | ----------------------- |
-| TCP/UDP  | 30303 | Ethereum P2P networking |
-| TCP      | 6230  | HTTP RPC                |
-| TCP      | 8293  | WebSocket RPC           |
-
-Firewall is configured using `ufw`, ensuring your node is reachable by peers but protected from unwanted traffic.
-
----
-
-## Troubleshooting
-
-* **Node does not sync**: check that the genesis file matches the main network
-* **Peers not connecting**: ensure firewall allows 30303 TCP/UDP and the enode URL is correct
-* **Node fails to start**: remove old chain data:
-
-```bash
-rm -rf ~/cygnus_data/geth/chaindata
+```javascript
+> eth.blockNumber
 ```
 
-and re-run `node.sh`.
+Check coinbase (mining address):
 
-* **Check logs**:
-
-```bash
-screen -r cygnus_node
+```javascript
+> eth.coinbase
 ```
 
----
+## Notes
 
-## Contributing
+* Make sure ports are open and accessible if running behind NAT/firewall.
+* Mining with one thread is default; adjust `--miner.threads` as needed.
+* Your Ethereum account is unlocked only while the node is running; the password is stored in `~/cygnus_data/password.txt`.
 
-We welcome contributions! Please submit pull requests for:
-
-* Bug fixes
-* Feature enhancements
-* Updated scripts for new Geth versions
-
-Before submitting, ensure:
-
-* Scripts work end-to-end
-* Proper permissions are set (`chmod +x`)
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Support
-
-For support, visit our official website: [https://cygnuschain.com](https://cygnuschain.com)
-
-Cygnus Node — **Run a full Cygnus blockchain node effortlessly!**
+This setup ensures your node is connected, mining, and synchronized with the Cygnus network.
