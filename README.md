@@ -1,4 +1,4 @@
-# Cygnus Node (chainId 235)
+# Cygnus Node (Mainnet)
 
 Run a Cygnus full node and optionally mine using Geth **v1.10.23**.
 
