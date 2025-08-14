@@ -52,11 +52,9 @@ Cygnus Node is designed for blockchain enthusiasts, developers, and validators w
 Before running the node, ensure you have:
 
 * Ubuntu / Debian 64-bit server
-* `geth` installed (v1.10.23 recommended)
 * `screen` installed (`sudo apt install screen`)
 * UFW enabled (`sudo ufw enable`)
-* Genesis file available at `~/node/genesis.json`
-* Node account created with keystore and password file
+
 
 ---
 
