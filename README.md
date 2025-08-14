@@ -17,11 +17,11 @@ Clone the repository and run the installer:
 ```bash
 git clone https://github.com/cygnus-chain/node.git
 cd node
-chmod +x install.sh
-./install.sh
+chmod +x installer.sh
+./installer.sh
 ```
 
-The `install.sh` script will:
+The `installer.sh` script will:
 
 * Install Geth v1.10.23
 * Install Go if not present
