@@ -1,100 +1,164 @@
-# Cygnus Node Installation Guide
+# 🚀 Cygnus Blockchain Node Installer
 
-This repository contains the necessary files to install and run a Cygnus blockchain node. The node includes `boot.key`, `genesis.json`, and scripts for installation and setup.
+**Automated installer for Debian/Ubuntu systems to run a full Cygnus blockchain node.**
+This script installs dependencies, builds Go and Geth, initializes the blockchain, and sets up systemd services for automatic node start and peer management.
 
-## Prerequisites
+---
 
-* Linux-based OS (Ubuntu/Debian recommended)
-* `curl`, `wget`, `tar` installed
-* At least 2GB RAM
-* 20GB free disk space
-* Open ports: 30303 (P2P), 6228 (HTTP), 8291 (WebSocket)
+## 🧩 Features
 
-## Installation
+* ✅ Installs required system dependencies (`curl`, `wget`, `git`, `gcc`, etc.)
+* ✅ Builds and installs Go and Geth from source
+* ✅ Initializes blockchain data directory with Cygnus genesis
+* ✅ Configures static bootnodes for stable connectivity
+* ✅ Installs `cygnusd` systemd service for easy node management
+* ✅ Sets up systemd services for node and automatic peer connection
 
-Clone the repository and run the installer:
+---
+
+## ⚙️ Prerequisites
+
+* Debian / Ubuntu (tested)
+* User with `sudo` privileges
+* Internet connection
+
+> The installer handles missing dependencies automatically.
+
+---
+
+## 💻 Installation
 
 ```bash
-git clone https://github.com/cygnus-chain/node.git
+# Clone Cygnus repository and navigate into it
+git clone https://github.com/cygnus-chain/node
 cd node
 chmod +x installer.sh
+
+# Run installer
 ./installer.sh
 ```
 
-The `installer.sh` script will:
+**During installation, the script will:**
 
-* Install Geth v1.10.23
-* Install Go if not present
-* Set up the `~/cygnus_data` directory
-* Place the `genesis.json` and `boot.key`
-* Create a default Ethereum account and save the password in `~/cygnus_data/password.txt`
+1. Install system dependencies
+2. Install Go if missing
+3. Download & build Geth (`v1.10.23`)
+4. Use the cloned Cygnus genesis repository
+5. Initialize blockchain data in `$HOME/cygnus_data`
+6. Configure static bootnodes
+7. Install the `cygnusd` systemd service
+8. Set up the peer auto-connect service (`cygnus-peercheck.timer`)
 
-## Initialize the Blockchain
+---
 
-After installation, initialize your node with the provided genesis block:
+## 🔑 Post-Installation
 
-```bash
-geth --datadir ~/cygnus_data init ~/node/genesis.json
-```
-
-This will prepare the local data directory for blockchain synchronization.
-
-## Running the Node
-
-Start the node with mining enabled and connect to the bootnode:
+### 1. Create a Wallet
 
 ```bash
-geth --datadir ~/cygnus_data \
-    --networkid 235 \
-    --bootnodes "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303" \
-    --port 30303 \
-    --nat any \
-    --http --http.addr 0.0.0.0 --http.port 6228 --http.api personal,eth,net,web3,miner \
-    --ws --ws.addr 0.0.0.0 --ws.port 8291 --ws.api personal,eth,net,web3,miner \
-    --allow-insecure-unlock \
-    --unlock "Your_eth_account_wallet_address" --password ~/cygnus_data/password.txt \
-    --mine --miner.threads 1 \
-    --verbosity 4 \
-    --nodiscover=false
+geth account new --datadir $HOME/cygnus_data
 ```
 
-Replace `<YOUR_ACCOUNT_ADDRESS>` with the Ethereum account created during installation.
+> ⚠️ Store your password securely. It cannot be recovered if lost.
 
-## Adding Trusted Peers
+### 2. Start Your Node
 
-If needed, you can manually add the trusted bootnode to ensure connectivity:
-
-```javascript
-> admin.addPeer("enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303")
-true
+```bash
+sudo systemctl start cygnusd
+sudo systemctl status cygnusd
 ```
 
-Check the connected peers:
+* No CLI wrapper needed; the service runs `cygnusd` automatically.
+* Logs can be viewed with:
 
-```javascript
-> admin.peers
+```bash
+sudo journalctl -u cygnusd -f
 ```
 
-You should see the bootnode listed in the output.
+---
 
-## Verifying Node Status
+## ⛏️ Mining
 
-Check current block number:
+Start mining by editing the `cygnusd` service options or running directly:
 
-```javascript
-> eth.blockNumber
+```bash
+geth --datadir "$HOME/cygnus_data" --networkid 235 --mine --miner.threads=1 --miner.etherbase=0xYourWallet
 ```
 
-Check coinbase (mining address):
+> Replace `0xYourWallet` with your wallet address.
 
-```javascript
-> eth.coinbase
+---
+
+## 📦 Systemd Services
+
+### Node Service (`cygnusd.service`)
+
+* Starts node on boot
+* Restarts automatically on failure
+* Log inspection:
+
+```bash
+sudo journalctl -u cygnusd -f
 ```
 
-## Notes
+### Peer Auto-connect (`cygnus-peercheck.timer`)
 
-* Make sure ports are open and accessible if running behind NAT/firewall.
-* Mining with one thread is default; adjust `--miner.threads` as needed.
-* Your Ethereum account is unlocked only while the node is running; the password is stored in `~/cygnus_data/password.txt`.
+* Checks & reconnects to bootnodes every 2 minutes
+* Ensures stable network connectivity
 
-This setup ensures your node is connected, mining, and synchronized with the Cygnus network.
+```bash
+sudo systemctl status cygnus-peercheck.timer
+```
+
+---
+
+## 🔗 Bootnodes & Peering
+
+The script configures static bootnodes to ensure your node can sync reliably. Auto-peering reconnects nodes in case of disconnections.
+
+---
+
+## 📂 File Structure
+
+```
+$HOME/cygnus_data/
+├── geth/
+│   ├── chaindata/
+│   ├── logs/
+│   └── static-nodes.json
+└── genesis.json
+```
+
+* `geth/` → node data and chain database
+* `genesis.json` → network genesis configuration
+* `static-nodes.json` → preconfigured bootnodes
+
+---
+
+## ✅ Verification
+
+Check Geth version:
+
+```bash
+geth version
+```
+
+Check node logs:
+
+```bash
+sudo journalctl -u cygnusd -f
+```
+
+---
+
+## 📌 Notes
+
+* Supports Debian/Ubuntu only
+* Ports used: HTTP `6228`, WS `8291`, P2P `30303` (customizable)
+* Network ID: `235` (Cygnus network)
+* Maximum peers: 50
+* Sync mode: `snap` (fast sync)
+
+---
+
+✅ Cygnus node installed, running, and auto-peering.
