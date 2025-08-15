@@ -78,20 +78,18 @@ cat << 'EOM'
 
 Next steps:
 
-1) Create a wallet account (you will be asked for a password):
+1) Create a wallet account:
    geth account new --datadir $HOME/cygnus_data
 
-IMPORTANT: Store your password securely. It CANNOT be recovered.
+   You will be asked for a password — choose one and remember it.
 
-2) Initialize and run your node using the CLI wrapper in this repo:
-   chmod +x ./cli.sh
-   ./cli.sh --http --http.addr "0.0.0.0" --http.port 8545 --port 30303
+2) Save your password securely to a file so geth can unlock automatically:
+   echo "YOUR_PASSWORD" > $HOME/cygnus_data/password.txt
+   chmod 600 $HOME/cygnus_data/password.txt
 
-To mine:
-   ./cli.sh --http --http.addr "0.0.0.0" --http.port 8545 --port 30303 --mine --miner.threads=1 --miner.etherbase=0xYourWallet
+   Replace YOUR_PASSWORD with the same one you used in step 1.
 
-(Optional) Make the CLI available globally:
-   sudo ln -sf "$(pwd)/cli.sh" /usr/local/bin/cygnus-cli
-   cygnus-cli --help
+3) Initialize the chain with your genesis file:
+   geth --datadir $HOME/cygnus_data init /path/to/genesis.json
 
 EOM
