@@ -46,7 +46,7 @@ Start the node with mining enabled and connect to the bootnode:
 ```bash
 geth --datadir ~/cygnus_data \
     --networkid 235 \
-    --bootnodes "enode://3c7692ad6c045ee7ff574f8321b9ea8689783756f4f5007c9ad8e7cc24a9670ac742abcc9060aa0b1e3ab38355b19063f0141ce1c7bb8e2a942c7168e18101f4@88.99.217.236:30303" \
+    --bootnodes "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303" \
     --port 30303 \
     --nat any \
     --http --http.addr 0.0.0.0 --http.port 6228 --http.api personal,eth,net,web3,miner \
@@ -65,7 +65,7 @@ Replace `<YOUR_ACCOUNT_ADDRESS>` with the Ethereum account created during instal
 If needed, you can manually add the trusted bootnode to ensure connectivity:
 
 ```javascript
-> admin.addPeer("enode://3c7692ad6c045ee7ff574f8321b9ea8689783756f4f5007c9ad8e7cc24a9670ac742abcc9060aa0b1e3ab38355b19063f0141ce1c7bb8e2a942c7168e18101f4@88.99.217.236:30303")
+> admin.addPeer("enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303")
 true
 ```
 
