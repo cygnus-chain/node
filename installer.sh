@@ -52,13 +52,15 @@ if ! command -v go >/dev/null 2>&1; then
   wget -q "https://go.dev/dl/${GO_TARBALL}" -O "${WORKDIR}/${GO_TARBALL}"
   $SUDO rm -rf /usr/local/go
   $SUDO tar -C /usr/local -xzf "${WORKDIR}/${GO_TARBALL}"
-  if [ -d /etc/profile.d ] && $SUDO bash -lc 'touch /etc/profile.d/go.sh 2>/dev/null'; then
-    $SUDO bash -lc 'echo "export PATH=\$PATH:/usr/local/go/bin" > /etc/profile.d/go.sh'
+
+  if [ -d /etc/profile.d ] && $SUDO bash -lc "touch /etc/profile.d/go.sh 2>/dev/null" ; then
+    $SUDO bash -lc "echo 'export PATH=\$PATH:/usr/local/go/bin' > /etc/profile.d/go.sh"
   else
     if ! grep -q '/usr/local/go/bin' "${HOME}/.profile" 2>/dev/null; then
       echo 'export PATH=$PATH:/usr/local/go/bin' >> "${HOME}/.profile"
     fi
   fi
+
   export PATH=$PATH:/usr/local/go/bin
   echo "Go $(go version) installed."
 else
