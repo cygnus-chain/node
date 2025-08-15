@@ -113,6 +113,31 @@ STATIC_NODES_PATH="${CYGNUS_DATADIR}/geth/static-nodes.json"
 printf '%s\n' "[$(printf '"%s",' "${BOOTNODES[@]}" | sed 's/,$//')]" > "${STATIC_NODES_PATH}"
 
 # ----------------------
+# Mining setup prompt
+# ----------------------
+echo "Do you want to enable mining on this node?"
+echo "1) CPU mining with geth"
+echo "2) External ASIC/GPU miner (Ethminer, PhoenixMiner, lolMiner)"
+echo "3) No mining"
+read -rp "Choose option [1-3]: " MINING_OPTION
+
+ETHERBASE=""
+MINER_THREADS="1"
+MINING_FLAGS=""
+if [ "$MINING_OPTION" = "1" ]; then
+  read -rp "Enter your Cygnus wallet address for rewards: " ETHERBASE
+  read -rp "Enter number of CPU threads to use [default: 1]: " MINER_THREADS
+  MINER_THREADS=${MINER_THREADS:-1}
+  MINING_FLAGS="--mine --miner.threads=${MINER_THREADS} --miner.etherbase=${ETHERBASE}"
+elif [ "$MINING_OPTION" = "2" ]; then
+  echo
+  echo "✅ Your node will sync and serve work to an external miner."
+  echo "   Connect your miner to: http://$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
+  echo "   Example (Ethminer):"
+  echo "   ethminer -P http://0xYOURADDRESS@$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
+fi
+
+# ----------------------
 # Wrapper
 # ----------------------
 echo "==> Installing cygnusd wrapper..."
@@ -128,7 +153,8 @@ exec /usr/local/bin/geth \\
   --maxpeers 50 \\
   --syncmode "snap" \\
   --cache 1024 \\
-  --verbosity 3
+  --verbosity 3 \\
+  ${MINING_FLAGS}
 EOF
 $SUDO chmod +x /usr/local/bin/cygnusd
 
