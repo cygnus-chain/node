@@ -6,7 +6,7 @@ set -euo pipefail
 # ----------------------
 CYGNUS_DATADIR="${HOME}/cygnus_data"
 GETH_VERSION="v1.10.23"
-GETH_ZIP_URL="https://github.com/CryptoDevelopmentServices/Go-Cygnus/archive/refs/tags/${GETH_VERSION}.zip"
+GETH_ZIP_URL="https://github.com/cygnus-chain/core/archive/refs/tags/${GETH_VERSION}.zip"
 CYGNUS_NETWORKID="235"   # Force Cygnus network
 CYGNUS_HTTP_PORT="6228"
 CYGNUS_WS_PORT="8291"
@@ -68,12 +68,12 @@ else
 fi
 
 # ----------------------
-# Build geth from Go-Cygnus fork
+# Build geth from core fork
 # ----------------------
-echo "==> Downloading Go-Cygnus source ${GETH_VERSION}..."
+echo "==> Downloading core source ${GETH_VERSION}..."
 wget -q "${GETH_ZIP_URL}" -O "${WORKDIR}/geth.zip"
 unzip -q "${WORKDIR}/geth.zip" -d "${WORKDIR}"
-SRC_DIR="${WORKDIR}/Go-Cygnus-${GETH_VERSION}"
+SRC_DIR="${WORKDIR}/core-${GETH_VERSION}"
 
 echo "==> Building geth (this may take a few minutes)..."
 pushd "$SRC_DIR" >/dev/null
