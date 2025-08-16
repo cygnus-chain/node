@@ -1,7 +1,7 @@
 # 🚀 Cygnus Blockchain Node Installer
 
 **Automated installer for Debian/Ubuntu systems to run a full Cygnus blockchain node.**
-This script installs dependencies, builds Go and Geth, initializes the blockchain, and sets up systemd services for automatic node start and peer management.
+This script installs dependencies, builds Go and Geth, initializes the blockchain, sets up CPU mining options, and configures systemd services for automatic node start and peer management.
 
 ---
 
@@ -12,7 +12,8 @@ This script installs dependencies, builds Go and Geth, initializes the blockchai
 * ✅ Initializes blockchain data directory with Cygnus genesis
 * ✅ Configures static bootnodes for stable connectivity
 * ✅ Installs `cygnusd` systemd service for easy node management
-* ✅ Sets up systemd services for node and automatic peer connection
+* ✅ Sets up peer auto-connect service (`cygnus-peercheck.timer`)
+* ✅ Optional CPU mining setup
 
 ---
 
@@ -32,6 +33,8 @@ This script installs dependencies, builds Go and Geth, initializes the blockchai
 # Clone Cygnus repository and navigate into it
 git clone https://github.com/cygnus-chain/node
 cd node
+
+# Make installer executable
 chmod +x installer.sh
 
 # Run installer
@@ -46,8 +49,9 @@ chmod +x installer.sh
 4. Use the cloned Cygnus genesis repository
 5. Initialize blockchain data in `$HOME/cygnus_data`
 6. Configure static bootnodes
-7. Install the `cygnusd` systemd service
-8. Set up the peer auto-connect service (`cygnus-peercheck.timer`)
+7. Configure optional CPU mining
+8. Install the `cygnusd` systemd service
+9. Set up the peer auto-connect service (`cygnus-peercheck.timer`)
 
 ---
 
@@ -68,7 +72,7 @@ sudo systemctl start cygnusd
 sudo systemctl status cygnusd
 ```
 
-* No CLI wrapper needed; the service runs `cygnusd` automatically.
+* The node runs automatically via systemd.
 * Logs can be viewed with:
 
 ```bash
@@ -77,15 +81,19 @@ sudo journalctl -u cygnusd -f
 
 ---
 
-## ⛏️ Mining
+## ⛏️ Mining Options
 
-Start mining by editing the `cygnusd` service options or running directly:
+During installation, you can choose:
 
-```bash
-geth --datadir "$HOME/cygnus_data" --networkid 235 --mine --miner.threads=1 --miner.etherbase=0xYourWallet
-```
+1. **CPU Mining with Geth**
 
-> Replace `0xYourWallet` with your wallet address.
+   * Enter your Cygnus wallet address
+   * Select the number of CPU threads
+2. **No Mining**
+
+   * Node will only sync and validate blocks without mining
+
+> Replace `0xYOURADDRESS` with your wallet address if mining.
 
 ---
 
@@ -95,6 +103,7 @@ geth --datadir "$HOME/cygnus_data" --networkid 235 --mine --miner.threads=1 --mi
 
 * Starts node on boot
 * Restarts automatically on failure
+* Mining flags configured based on installation choice
 * Log inspection:
 
 ```bash
@@ -114,7 +123,7 @@ sudo systemctl status cygnus-peercheck.timer
 
 ## 🔗 Bootnodes & Peering
 
-The script configures static bootnodes to ensure your node can sync reliably. Auto-peering reconnects nodes in case of disconnections.
+The script configures static bootnodes for reliable network syncing. Auto-peering reconnects nodes if peers drop.
 
 ---
 
@@ -158,7 +167,8 @@ sudo journalctl -u cygnusd -f
 * Network ID: `235` (Cygnus network)
 * Maximum peers: 50
 * Sync mode: `snap` (fast sync)
+* Optional mining can be CPU-based only
 
 ---
 
-✅ Cygnus node installed, running, and auto-peering.
+✅ Cygnus node installed, running, and auto-peering with optional CPU mining configured.
