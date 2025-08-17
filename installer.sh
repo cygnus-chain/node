@@ -73,7 +73,8 @@ fi
 echo "==> Downloading core source ${GETH_VERSION}..."
 wget -q "${GETH_ZIP_URL}" -O "${WORKDIR}/geth.zip"
 unzip -q "${WORKDIR}/geth.zip" -d "${WORKDIR}"
-SRC_DIR="${WORKDIR}/core-${GETH_VERSION}"
+SRC_DIR="$(find "${WORKDIR}" -maxdepth 1 -type d -name 'core-*' | head -n 1)"
+echo "==> Using source directory: ${SRC_DIR}"
 
 echo "==> Building geth (this may take a few minutes)..."
 pushd "$SRC_DIR" >/dev/null
