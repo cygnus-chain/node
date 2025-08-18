@@ -8,7 +8,7 @@ GitHub URL: [https://github.com/cygnus-chain/node](https://github.com/cygnus-cha
 
 Features
 
-* Builds and installs Geth v1.10.23 with halving support.
+* Builds and installs Cygnus core v1.11.33.1 with halving support and dapp defi support.
 * Automatically initializes the chain using genesis.json.
 * Static peer configuration for consistent P2P connectivity.
 * Optional CPU or external mining setup.
