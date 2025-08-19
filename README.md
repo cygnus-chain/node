@@ -1,174 +1,177 @@
-# 🚀 Cygnus Blockchain Node Installer
+Cygnus Node Installer
 
-**Automated installer for Debian/Ubuntu systems to run a full Cygnus blockchain node.**
-This script installs dependencies, builds Go and Geth, initializes the blockchain, sets up CPU mining options, and configures systemd services for automatic node start and peer management.
+This repository contains a complete installer for running a Cygnus blockchain node. It builds a halving-enabled Geth binary, sets up your datadir, static peers, mining options, and systemd services for automatic startup.
 
----
-
-## 🧩 Features
-
-* ✅ Installs required system dependencies (`curl`, `wget`, `git`, `gcc`, etc.)
-* ✅ Builds and installs Go and Geth from source
-* ✅ Initializes blockchain data directory with Cygnus genesis
-* ✅ Configures static bootnodes for stable connectivity
-* ✅ Installs `cygnusd` systemd service for easy node management
-* ✅ Sets up peer auto-connect service (`cygnus-peercheck.timer`)
-* ✅ Optional CPU mining setup
+GitHub URL: [https://github.com/cygnus-chain/node](https://github.com/cygnus-chain/node)
 
 ---
 
-## ⚙️ Prerequisites
+Features
 
-* Debian / Ubuntu (tested)
-* User with `sudo` privileges
-* Internet connection
-
-> The installer handles missing dependencies automatically.
+* Builds and installs Cygnus core v1.11.33.1 with halving support and dapp defi support.
+* Automatically initializes the chain using genesis.json.
+* Static peer configuration for consistent P2P connectivity.
+* Optional CPU or external mining setup.
+* Systemd service for automatic node startup.
+* Peer healthcheck timer to auto-connect to bootnodes.
+* Safe upgrade path — preserves existing blockchain data.
 
 ---
 
-## 💻 Installation
+Prerequisites
 
-```bash
-# Clone Cygnus repository and navigate into it
-git clone https://github.com/cygnus-chain/node
+* Ubuntu / Debian Linux (supported versions only).
+* At least 2 GB RAM recommended.
+* Internet access for downloading Go and source code.
+
+---
+
+Installation
+
+1. Clone the repository:
+
+```
+git clone https://github.com/cygnus-chain/node.git
 cd node
+```
 
-# Make installer executable
+2. Run the installer:
+
+```
 chmod +x installer.sh
-
-# Run installer
 ./installer.sh
 ```
 
-**During installation, the script will:**
+3. Installer steps:
 
-1. Install system dependencies
-2. Install Go if missing
-3. Download & build Geth (`v1.10.23`)
-4. Use the cloned Cygnus genesis repository
-5. Initialize blockchain data in `$HOME/cygnus_data`
-6. Configure static bootnodes
-7. Configure optional CPU mining
-8. Install the `cygnusd` systemd service
-9. Set up the peer auto-connect service (`cygnus-peercheck.timer`)
+* Installs build dependencies and Go if missing.
+* Downloads and builds the Cygnus Geth binary.
+* Copies genesis.json to your data directory (\~/cygnus\_data).
+* Initializes the chain if this is a fresh node.
+* Configures static peers and optional mining settings.
+* Installs a cygnusd wrapper script and systemd service.
+* Installs a cygnus-peercheck timer for automatic peer connection.
 
 ---
 
-## 🔑 Post-Installation
+Running the Node
 
-### 1. Create a Wallet
+After installation, the node runs automatically via systemd:
 
-```bash
-geth account new --datadir $HOME/cygnus_data
 ```
-
-> ⚠️ Store your password securely. It cannot be recovered if lost.
-
-### 2. Start Your Node
-
-```bash
-sudo systemctl start cygnusd
 sudo systemctl status cygnusd
-```
-
-* The node runs automatically via systemd.
-* Logs can be viewed with:
-
-```bash
 sudo journalctl -u cygnusd -f
 ```
 
+Check peer connectivity:
+
+```
+geth attach ipc:~/cygnus_data/geth.ipc
+> admin.peers
+```
+
+Check current block and coinbase balance:
+
+```javascript
+> eth.blockNumber
+> web3.fromWei(eth.getBalance(eth.coinbase), "ether")
+```
+
 ---
 
-## ⛏️ Mining Options
+Mining Options
 
 During installation, you can choose:
 
-1. **CPU Mining with Geth**
+1. CPU mining
 
-   * Enter your Cygnus wallet address
-   * Select the number of CPU threads
-2. **No Mining**
+   * Enter your Cygnus wallet address for rewards.
+   * Set number of CPU threads to use.
 
-   * Node will only sync and validate blocks without mining
 
-> Replace `0xYOURADDRESS` with your wallet address if mining.
+2. No mining
+
+   * Node will just sync and serve the network.
 
 ---
 
-## 📦 Systemd Services
+Upgrading Existing Nodes
 
-### Node Service (`cygnusd.service`)
+1. Backup your existing datadir:
 
-* Starts node on boot
-* Restarts automatically on failure
-* Mining flags configured based on installation choice
-* Log inspection:
-
-```bash
-sudo journalctl -u cygnusd -f
+```
+cp -r ~/cygnus_data ~/cygnus_data-backup
 ```
 
-### Peer Auto-connect (`cygnus-peercheck.timer`)
+2. Stop the current node:
 
-* Checks & reconnects to bootnodes every 2 minutes
-* Ensures stable network connectivity
+```
+sudo systemctl stop cygnusd
+```
 
-```bash
+3. Run installer.sh — it will detect the existing chain and preserve all blocks.
+
+4. Start the upgraded node:
+
+```
+sudo systemctl start cygnusd
+```
+
+---
+
+Static Peers / Bootnodes
+
+* Main node enode:
+
+```
+enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303
+```
+
+* Can be added manually in static-nodes.json:
+
+```
+[
+  "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303"
+]
+```
+
+* Any node using this installer will auto-connect to the main node.
+
+---
+
+Connecting via IPC
+
+```
+geth attach ipc:~/cygnus_data/geth.ipc
+```
+
+* This allows you to run commands in the Geth JS console.
+* Examples:
+
+  ```javascript
+  > eth.blockNumber
+  > admin.peers
+  > eth.getBalance(eth.coinbase)
+  ```
+
+---
+
+Systemd Services
+
+* cygnusd.service → runs the node continuously and auto-restarts.
+* cygnus-peercheck.timer → runs every 2 minutes to reconnect peers if disconnected.
+
+Check status:
+
+```
+sudo systemctl status cygnusd
 sudo systemctl status cygnus-peercheck.timer
 ```
 
 ---
 
-## 🔗 Bootnodes & Peering
+Notes
 
-The script configures static bootnodes for reliable network syncing. Auto-peering reconnects nodes if peers drop.
-
----
-
-## 📂 File Structure
-
-```
-$HOME/cygnus_data/
-├── geth/
-│   ├── chaindata/
-│   ├── logs/
-│   └── static-nodes.json
-└── genesis.json
-```
-
-* `geth/` → node data and chain database
-* `genesis.json` → network genesis configuration
-* `static-nodes.json` → preconfigured bootnodes
-
----
-
-## ✅ Verification
-
-Check Geth version:
-
-```bash
-geth version
-```
-
-Check node logs:
-
-```bash
-sudo journalctl -u cygnusd -f
-```
-
----
-
-## 📌 Notes
-
-* Supports Debian/Ubuntu only
-* Ports used: HTTP `6228`, WS `8291`, P2P `30303` (customizable)
-* Network ID: `235` (Cygnus network)
-* Maximum peers: 50
-* Sync mode: `snap` (fast sync)
-* Optional mining can be CPU-based only
-
----
-
-✅ Cygnus node installed, running, and auto-peering with optional CPU mining configured.
+* The halving-enabled Geth ensures mining rewards halve at the configured block.
+* Make sure all nodes upgrade before the halving block to avoid chain divergence.
+* The installer script can be safely run multiple times — it detects existing chains and preserves them.

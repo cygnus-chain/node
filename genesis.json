@@ -9,7 +9,9 @@
     "constantinopleBlock": 0,
     "petersburgBlock": 0,
     "istanbulBlock": 0,
-    "muirGlacierBlock": 0
+    "muirGlacierBlock": 0,
+    "berlinBlock": 55000,
+    "londonBlock": 55000
   },
   "difficulty": "0x50000",
   "gasLimit": "0x3B9ACA0",

@@ -5,9 +5,9 @@ set -euo pipefail
 # CONFIG
 # ----------------------
 CYGNUS_DATADIR="${HOME}/cygnus_data"
-GETH_VERSION="v1.10.23"
+GETH_VERSION="v1.11.33.1"
 GETH_ZIP_URL="https://github.com/cygnus-chain/core/archive/refs/tags/${GETH_VERSION}.zip"
-CYGNUS_NETWORKID="235"   # Force Cygnus network
+CYGNUS_NETWORKID="235"   # Cygnus network ID
 CYGNUS_HTTP_PORT="6228"
 CYGNUS_WS_PORT="8291"
 CYGNUS_P2P_PORT="30303"
@@ -73,7 +73,8 @@ fi
 echo "==> Downloading core source ${GETH_VERSION}..."
 wget -q "${GETH_ZIP_URL}" -O "${WORKDIR}/geth.zip"
 unzip -q "${WORKDIR}/geth.zip" -d "${WORKDIR}"
-SRC_DIR="${WORKDIR}/core-${GETH_VERSION}"
+SRC_DIR="$(find "${WORKDIR}" -maxdepth 1 -type d -name 'core-*' | head -n 1)"
+echo "==> Using source directory: ${SRC_DIR}"
 
 echo "==> Building geth (this may take a few minutes)..."
 pushd "$SRC_DIR" >/dev/null
@@ -118,8 +119,8 @@ printf '%s\n' "[$(printf '"%s",' "${BOOTNODES[@]}" | sed 's/,$//')]" > "${STATIC
 echo "Do you want to enable mining on this node?"
 echo "1) CPU mining with geth"
 echo "2) External ASIC/GPU miner (Ethminer, PhoenixMiner, lolMiner)"
-echo "3) No mining"
-read -rp "Choose option [1-3]: " MINING_OPTION
+echo "3) No mining (default)"
+read -rp "Choose option [1-3]: " MINING_OPTION || true
 
 ETHERBASE=""
 MINER_THREADS="1"
@@ -135,6 +136,8 @@ elif [ "$MINING_OPTION" = "2" ]; then
   echo "   Connect your miner to: http://$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
   echo "   Example (Ethminer):"
   echo "   ethminer -P http://0xYOURADDRESS@$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
+else
+  echo "✅ Running as a full node only (no mining)."
 fi
 
 # ----------------------
@@ -148,12 +151,13 @@ exec /usr/local/bin/geth \\
   --networkid "${CYGNUS_NETWORKID}" \\
   --port "${CYGNUS_P2P_PORT}" \\
   --nat any \\
-  --http --http.addr 0.0.0.0 --http.port "${CYGNUS_HTTP_PORT}" --http.api personal,eth,net,web3,miner \\
-  --ws --ws.addr 0.0.0.0 --ws.port "${CYGNUS_WS_PORT}" --ws.api personal,eth,net,web3,miner \\
+  --http --http.addr 0.0.0.0 --http.port "${CYGNUS_HTTP_PORT}" --http.api personal,eth,net,web3,miner,engine,debug,txpool \\
+  --ws --ws.addr 0.0.0.0 --ws.port "${CYGNUS_WS_PORT}" --ws.api personal,eth,net,web3,miner,engine,debug,txpool \\
   --maxpeers 50 \\
   --syncmode "snap" \\
-  --cache 1024 \\
+  --cache 2048 \\
   --verbosity 3 \\
+  --authrpc.port 8551 --authrpc.addr 0.0.0.0 --authrpc.vhosts="*" --authrpc.jwtsecret "${CYGNUS_DATADIR}/geth/jwtsecret" \\
   ${MINING_FLAGS}
 EOF
 $SUDO chmod +x /usr/local/bin/cygnusd
@@ -225,5 +229,5 @@ $SUDO systemctl daemon-reload
 $SUDO systemctl enable --now cygnusd.service
 $SUDO systemctl enable --now cygnus-peercheck.timer
 
-echo "✅ Cygnus node installed, running, and auto-peering."
+echo "✅ Cygnus v${GETH_VERSION} node installed, running, and auto-peering."
 echo "Check logs: sudo journalctl -u cygnusd -f"
