@@ -1,14 +1,14 @@
-Cygnus Node Installer
+# Cygnus Node Installer
 
-This repository contains a complete installer for running a Cygnus blockchain node. It builds a halving-enabled Geth binary, sets up your datadir, static peers, mining options, and systemd services for automatic startup.
+This repository contains a complete installer for running a Cygnus blockchain node. It builds the Cygnus Geth binary, sets up your datadir, static peers, mining options, and systemd services for automatic startup.
 
 GitHub URL: [https://github.com/cygnus-chain/node](https://github.com/cygnus-chain/node)
 
 ---
 
-Features
+## Features
 
-* Builds and installs Cygnus core v1.11.33.1 with halving support and dapp defi support.
+* Builds and installs Cygnus core v1.11.33.1 with dapp/defi support.
 * Automatically initializes the chain using genesis.json.
 * Static peer configuration for consistent P2P connectivity.
 * Optional CPU or external mining setup.
@@ -18,7 +18,7 @@ Features
 
 ---
 
-Prerequisites
+## Prerequisites
 
 * Ubuntu / Debian Linux (supported versions only).
 * At least 2 GB RAM recommended.
@@ -26,18 +26,18 @@ Prerequisites
 
 ---
 
-Installation
+## Installation
 
 1. Clone the repository:
 
-```
+```bash
 git clone https://github.com/cygnus-chain/node.git
 cd node
 ```
 
 2. Run the installer:
 
-```
+```bash
 chmod +x installer.sh
 ./installer.sh
 ```
@@ -46,26 +46,26 @@ chmod +x installer.sh
 
 * Installs build dependencies and Go if missing.
 * Downloads and builds the Cygnus Geth binary.
-* Copies genesis.json to your data directory (\~/cygnus\_data).
+* Copies genesis.json to your data directory (`~/cygnus_data`).
 * Initializes the chain if this is a fresh node.
 * Configures static peers and optional mining settings.
-* Installs a cygnusd wrapper script and systemd service.
-* Installs a cygnus-peercheck timer for automatic peer connection.
+* Installs a `cygnusd` wrapper script and systemd service.
+* Installs a `cygnus-peercheck` timer for automatic peer connection.
 
 ---
 
-Running the Node
+## Running the Node
 
 After installation, the node runs automatically via systemd:
 
-```
+```bash
 sudo systemctl status cygnusd
 sudo journalctl -u cygnusd -f
 ```
 
 Check peer connectivity:
 
-```
+```bash
 geth attach ipc:~/cygnus_data/geth.ipc
 > admin.peers
 ```
@@ -79,57 +79,56 @@ Check current block and coinbase balance:
 
 ---
 
-Mining Options
+## Mining Options
 
 During installation, you can choose:
 
-1. CPU mining
+1. **CPU mining**
 
    * Enter your Cygnus wallet address for rewards.
    * Set number of CPU threads to use.
 
-
-2. No mining
+2. **No mining**
 
    * Node will just sync and serve the network.
 
 ---
 
-Upgrading Existing Nodes
+## Upgrading Existing Nodes
 
 1. Backup your existing datadir:
 
-```
+```bash
 cp -r ~/cygnus_data ~/cygnus_data-backup
 ```
 
 2. Stop the current node:
 
-```
+```bash
 sudo systemctl stop cygnusd
 ```
 
-3. Run installer.sh — it will detect the existing chain and preserve all blocks.
+3. Run `installer.sh` — it will detect the existing chain and preserve all blocks.
 
 4. Start the upgraded node:
 
-```
+```bash
 sudo systemctl start cygnusd
 ```
 
 ---
 
-Static Peers / Bootnodes
+## Static Peers / Bootnodes
 
 * Main node enode:
 
-```
+```text
 enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303
 ```
 
-* Can be added manually in static-nodes.json:
+* Can be added manually in `static-nodes.json`:
 
-```
+```json
 [
   "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303"
 ]
@@ -139,39 +138,38 @@ enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54
 
 ---
 
-Connecting via IPC
+## Connecting via IPC
 
-```
+```bash
 geth attach ipc:~/cygnus_data/geth.ipc
 ```
 
 * This allows you to run commands in the Geth JS console.
 * Examples:
 
-  ```javascript
-  > eth.blockNumber
-  > admin.peers
-  > eth.getBalance(eth.coinbase)
-  ```
+```javascript
+> eth.blockNumber
+> admin.peers
+> eth.getBalance(eth.coinbase)
+```
 
 ---
 
-Systemd Services
+## Systemd Services
 
-* cygnusd.service → runs the node continuously and auto-restarts.
-* cygnus-peercheck.timer → runs every 2 minutes to reconnect peers if disconnected.
+* `cygnusd.service` → runs the node continuously and auto-restarts.
+* `cygnus-peercheck.timer` → runs every 2 minutes to reconnect peers if disconnected.
 
 Check status:
 
-```
+```bash
 sudo systemctl status cygnusd
 sudo systemctl status cygnus-peercheck.timer
 ```
 
 ---
 
-Notes
+## Notes
 
-* The halving-enabled Geth ensures mining rewards halve at the configured block.
-* Make sure all nodes upgrade before the halving block to avoid chain divergence.
+* All nodes using this installer will automatically peer with the main bootnode.
 * The installer script can be safely run multiple times — it detects existing chains and preserves them.
