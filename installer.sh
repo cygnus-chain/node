@@ -11,7 +11,7 @@ CYGNUS_NETWORKID="235"   # Cygnus network ID
 CYGNUS_HTTP_PORT="6228"
 CYGNUS_WS_PORT="8291"
 CYGNUS_P2P_PORT="30303"
-BOOTNODES=('enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303')
+BOOTNODES=()
 SUDO=""
 if [ "${EUID:-$(id -u)}" -ne 0 ]; then
   SUDO="sudo"
@@ -22,9 +22,7 @@ WORKDIR="$(mktemp -d)"
 # ----------------------
 # OS check
 # ----------------------
-if [ -f /etc/debian_version ]; then
-  PKG_MANAGER="apt"
-else
+if [ ! -f /etc/debian_version ]; then
   echo "This installer currently supports Debian/Ubuntu only." >&2
   exit 1
 fi
@@ -53,12 +51,10 @@ if ! command -v go >/dev/null 2>&1; then
   $SUDO rm -rf /usr/local/go
   $SUDO tar -C /usr/local -xzf "${WORKDIR}/${GO_TARBALL}"
 
-  if [ -d /etc/profile.d ] && $SUDO bash -lc "touch /etc/profile.d/go.sh 2>/dev/null" ; then
-    $SUDO bash -lc "echo 'export PATH=\$PATH:/usr/local/go/bin' > /etc/profile.d/go.sh"
+  if [ -d /etc/profile.d ]; then
+    $SUDO bash -c "echo 'export PATH=\$PATH:/usr/local/go/bin' > /etc/profile.d/go.sh"
   else
-    if ! grep -q '/usr/local/go/bin' "${HOME}/.profile" 2>/dev/null; then
-      echo 'export PATH=$PATH:/usr/local/go/bin' >> "${HOME}/.profile"
-    fi
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> "${HOME}/.profile"
   fi
 
   export PATH=$PATH:/usr/local/go/bin
@@ -107,11 +103,20 @@ if [ ! -f "${CYGNUS_DATADIR}/geth/chaindata/CURRENT" ]; then
 fi
 
 # ----------------------
-# Static peers
+# Static enode generation + Bootnode
 # ----------------------
+KEY_FILE="${CYGNUS_DATADIR}/geth/statickey"
+if [ ! -f "$KEY_FILE" ]; then
+  echo "==> Generating static enode key..."
+  bootnode -genkey "$KEY_FILE"
+fi
+
+ENODE="enode://$(bootnode -nodekey "$KEY_FILE" -writeaddress)@$(curl -s ifconfig.me):${CYGNUS_P2P_PORT}"
+BOOTNODES+=("$ENODE")
+
 echo "==> Writing static-nodes.json..."
 STATIC_NODES_PATH="${CYGNUS_DATADIR}/geth/static-nodes.json"
-printf '%s\n' "[$(printf '"%s",' "${BOOTNODES[@]}" | sed 's/,$//')]" > "${STATIC_NODES_PATH}"
+printf '%s\n' "[$(printf '"%s",' "${BOOTNODES[@]}" | sed 's/,$//')]" > "$STATIC_NODES_PATH"
 
 # ----------------------
 # Mining setup prompt
@@ -131,17 +136,13 @@ if [ "$MINING_OPTION" = "1" ]; then
   MINER_THREADS=${MINER_THREADS:-1}
   MINING_FLAGS="--mine --miner.threads=${MINER_THREADS} --miner.etherbase=${ETHERBASE}"
 elif [ "$MINING_OPTION" = "2" ]; then
-  echo
   echo "✅ Your node will sync and serve work to an external miner."
-  echo "   Connect your miner to: http://$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
-  echo "   Example (Ethminer):"
-  echo "   ethminer -P http://0xYOURADDRESS@$(hostname -I | awk '{print $1}'):${CYGNUS_HTTP_PORT}"
 else
   echo "✅ Running as a full node only (no mining)."
 fi
 
 # ----------------------
-# Wrapper
+# Wrapper script
 # ----------------------
 echo "==> Installing cygnusd wrapper..."
 $SUDO tee /usr/local/bin/cygnusd >/dev/null <<EOF
@@ -158,14 +159,15 @@ exec /usr/local/bin/geth \\
   --cache 2048 \\
   --verbosity 3 \\
   --authrpc.port 8551 --authrpc.addr 0.0.0.0 --authrpc.vhosts="*" --authrpc.jwtsecret "${CYGNUS_DATADIR}/geth/jwtsecret" \\
+  --bootnodes "${ENODE}" \\
   ${MINING_FLAGS}
 EOF
 $SUDO chmod +x /usr/local/bin/cygnusd
 
 # ----------------------
-# systemd service
+# systemd service for node
 # ----------------------
-echo "==> Creating systemd service..."
+echo "==> Creating systemd service for cygnusd..."
 $SUDO tee /etc/systemd/system/cygnusd.service >/dev/null <<EOF
 [Unit]
 Description=Cygnus blockchain node
@@ -183,7 +185,7 @@ WantedBy=multi-user.target
 EOF
 
 # ----------------------
-# Peer healthcheck
+# Peer healthcheck script
 # ----------------------
 echo "==> Creating peer healthcheck..."
 $SUDO tee /usr/local/bin/cygnus-peercheck >/dev/null <<'EOF'
@@ -200,6 +202,9 @@ fi
 EOF
 $SUDO chmod +x /usr/local/bin/cygnus-peercheck
 
+# ----------------------
+# systemd service and timer for peercheck
+# ----------------------
 $SUDO tee /etc/systemd/system/cygnus-peercheck.service >/dev/null <<EOF
 [Unit]
 Description=Cygnus peer auto-connect
@@ -231,3 +236,4 @@ $SUDO systemctl enable --now cygnus-peercheck.timer
 
 echo "✅ Cygnus v${GETH_VERSION} node installed, running, and auto-peering."
 echo "Check logs: sudo journalctl -u cygnusd -f"
+echo "Your static enode: ${ENODE}"
