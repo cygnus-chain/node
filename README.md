@@ -8,7 +8,7 @@ GitHub URL: [https://github.com/cygnus-chain/node](https://github.com/cygnus-cha
 
 ## Features
 
-* Builds and installs Cygnus core v1.11.33.1 with dapp/defi support.
+* Builds and installs Cygnus core v1.11.33.2 with dapp/defi support activation at block 100,000 .
 * Automatically initializes the chain using genesis.json.
 * Static peer configuration for consistent P2P connectivity.
 * Optional CPU or external mining setup.
