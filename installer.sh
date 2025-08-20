@@ -5,7 +5,7 @@ set -euo pipefail
 # CONFIG
 # ----------------------
 CYGNUS_DATADIR="${HOME}/cygnus_data"
-GETH_VERSION="v1.11.33.1"
+GETH_VERSION="v1.11.33.2"
 GETH_ZIP_URL="https://github.com/cygnus-chain/core/archive/refs/tags/${GETH_VERSION}.zip"
 CYGNUS_NETWORKID="235"   # Cygnus network ID
 CYGNUS_HTTP_PORT="6228"
