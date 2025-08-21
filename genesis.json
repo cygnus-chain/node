@@ -13,11 +13,11 @@
     "berlinBlock": 100000,
     "londonBlock": 100000
   },
-  "difficulty": "0x50000",
-  "gasLimit": "0x3B9ACA0",
+  "difficulty": "0xB71B04FA800",
+  "gasLimit": "0x1E8480",
   "alloc": {
     "0x000153074cB72d351cc1A9E2711AB9799356Ca4D": {
-      "balance": "0x1a784379d99db42000000"
+      "balance": "0x2fae1f0ad2a0000000000"
     }
   }
 }
