@@ -11,7 +11,7 @@ CYGNUS_NETWORKID="235"   # Cygnus network ID
 CYGNUS_HTTP_PORT="6228"
 CYGNUS_WS_PORT="8291"
 CYGNUS_P2P_PORT="30303"
-BOOTNODES=('enode://b9dd4eaea2f0f6fc193b3225c98590121cc03784788c2dded6d6c516007f6d06dc32f9b33fb2f084cdc71d05b5b035128d218c2cf1f4e44d8dda412078816901@88.99.217.236:30303')
+BOOTNODES=('enode://404245728d5d24c06b58c5e809809a30302c8560aff1f9adfacedb3c50dafae1f417b459e190110ca797eda564a3f9dee1a79385bb467d5a481d685ff70aaa3f@88.99.217.236:30303')
 SUDO=""
 if [ "${EUID:-$(id -u)}" -ne 0 ]; then
   SUDO="sudo"
@@ -189,7 +189,7 @@ echo "==> Creating peer healthcheck..."
 $SUDO tee /usr/local/bin/cygnus-peercheck >/dev/null <<'EOF'
 #!/usr/bin/env bash
 DATADIR="${HOME}/cygnus_data"
-BOOTNODES=('enode://b9dd4eaea2f0f6fc193b3225c98590121cc03784788c2dded6d6c516007f6d06dc32f9b33fb2f084cdc71d05b5b035128d218c2cf1f4e44d8dda412078816901@88.99.217.236:30303')
+BOOTNODES=('enode://404245728d5d24c06b58c5e809809a30302c8560aff1f9adfacedb3c50dafae1f417b459e190110ca797eda564a3f9dee1a79385bb467d5a481d685ff70aaa3f@88.99.217.236:30303')
 IPC="${DATADIR}/geth.ipc"
 PEERS=$(geth attach ipc:${IPC} --exec 'admin.peers.length' 2>/dev/null || echo 0)
 if [ -z "$PEERS" ] || [ "$PEERS" -lt 1 ]; then
