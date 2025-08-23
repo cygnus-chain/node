@@ -15,7 +15,8 @@ $CYGNUS_HTTP_PORT = "6228"
 $CYGNUS_WS_PORT   = "8291"
 $CYGNUS_P2P_PORT  = "30303"
 $BOOTNODES = @(
-    "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303"
+    "enode://404245728d5d24c06b58c5e809809a30302c8560aff1f9adfacedb3c50dafae1f417b459e190110ca797eda564a3f9dee1a79385bb467d5a481d685ff70aaa3f@88.99.217.236:30303",
+    "enode://e55e59b560037cbb65c8679a737260b971a310a4e4953001dc3bb017d2c108e005bf0cde23485b25db3a51448ae2ea176903ad7e1f8045f1a6199029fe7812f1@51.15.18.216:30306"
 )
 
 $INSTALL_DIR = "C:\Program Files\Cygnus"
@@ -54,6 +55,23 @@ if (!(Test-Path "$CYGNUS_DATADIR\geth\chaindata\CURRENT")) {
 }
 
 # ----------------------
+# Static Nodekey (fixes random enode IDs)
+# ----------------------
+$NodekeyFile = "$CYGNUS_DATADIR\geth\nodekey-static"
+if (!(Test-Path $NodekeyFile)) {
+    Write-Host "🔑 Generating static nodekey..."
+    if (!(Test-Path "$CYGNUS_DATADIR\geth")) {
+        New-Item -ItemType Directory -Path "$CYGNUS_DATADIR\geth" | Out-Null
+    }
+    $bytes = New-Object byte[] 32
+    (New-Object System.Security.Cryptography.RNGCryptoServiceProvider).GetBytes($bytes)
+    $hex = ($bytes | ForEach-Object { $_.ToString("x2") }) -join ""
+    Set-Content -Path $NodekeyFile -Value $hex -Encoding ASCII
+} else {
+    Write-Host "✅ Static nodekey already exists: $NodekeyFile"
+}
+
+# ----------------------
 # Static Peers
 # ----------------------
 $STATIC_PATH = "$CYGNUS_DATADIR\geth\static-nodes.json"
@@ -89,6 +107,8 @@ $WRAPPER = @"
   --datadir "$CYGNUS_DATADIR" ^
   --networkid $CYGNUS_NETWORKID ^
   --port $CYGNUS_P2P_PORT ^
+  --nodekey "$CYGNUS_DATADIR\geth\nodekey-static" ^
+  --bootnodes "$($BOOTNODES -join ",")" ^
   --http --http.addr 0.0.0.0 --http.port $CYGNUS_HTTP_PORT --http.api personal,eth,net,web3,miner,engine,debug,txpool ^
   --ws --ws.addr 0.0.0.0 --ws.port $CYGNUS_WS_PORT --ws.api personal,eth,net,web3,miner,engine,debug,txpool ^
   --maxpeers 50 ^
@@ -122,7 +142,8 @@ $PEERCHECK = @"
 `$datadir = "$CYGNUS_DATADIR"
 `$ipc = "$CYGNUS_DATADIR\geth.ipc"
 `$bootnodes = @(
-    "enode://89714f18d2d4500790b1b2b7c4e286736987b2cd414c16a305a5767f2631fe4a179b6f54b1aecbe5de1ccce11fd19f65c407553841ff950bfd482ac8bc498293@88.99.217.236:30303"
+    "enode://404245728d5d24c06b58c5e809809a30302c8560aff1f9adfacedb3c50dafae1f417b459e190110ca797eda564a3f9dee1a79385bb467d5a481d685ff70aaa3f@88.99.217.236:30303",
+    "enode://e55e59b560037cbb65c8679a737260b971a310a4e4953001dc3bb017d2c108e005bf0cde23485b25db3a51448ae2ea176903ad7e1f8045f1a6199029fe7812f1@51.15.18.216:30306"
 )
 try {
     `$peers = & "$INSTALL_DIR\geth.exe" attach ipc:`$ipc --exec "admin.peers.length"
@@ -142,5 +163,17 @@ Write-Host "==> Creating scheduled task for peer healthcheck..."
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-File `"$INSTALL_DIR\cygnus-peercheck.ps1`""
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration ([TimeSpan]::MaxValue)
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "CygnusPeerCheck" -Description "Reconnects to bootnodes if no peers" -User "SYSTEM" -RunLevel Highest -Force
+
+# ----------------------
+# Print permanent enode
+# ----------------------
+Start-Sleep -Seconds 5
+try {
+    $enode = & "$INSTALL_DIR\geth.exe" attach ipc:"$CYGNUS_DATADIR\geth.ipc" --exec "admin.nodeInfo.enode"
+    Write-Host "`n🌐 Your permanent enode ID:"
+    Write-Host $enode
+} catch {
+    Write-Host "⚠️ Could not fetch enode ID (node may still be starting)."
+}
 
 Write-Host "✅ Cygnus node installed, running, and auto-peering (Windows service + scheduler ready)."
