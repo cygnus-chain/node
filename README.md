@@ -1,4 +1,6 @@
-# Cygnus Node Installer
+# Cygnus Node Installer for LINUX
+
+`Please note:` the windows one can be seen here [https://github.com/CryptoDevelopmentServices/node/blob/main/README_Windows.md](https://github.com/CryptoDevelopmentServices/node/blob/main/README_Windows.md)
 
 This repository contains a complete installer for running a Cygnus blockchain node. It builds the Cygnus Geth binary, sets up your datadir, static peers, mining options, and systemd services for automatic startup.
 
